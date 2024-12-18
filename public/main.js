@@ -1,6 +1,11 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+// import * as createjs from 'createjs';
+import {
+  OrbitControls
+} from 'three/addons/controls/OrbitControls.js';
+import {
+  FBXLoader
+} from 'three/addons/loaders/FBXLoader.js';
 
 let currentSceneIndex = 0;
 let scenes = ['assets/1.jpg',
@@ -14,7 +19,7 @@ let scenes = ['assets/1.jpg',
 
 // Scene setup
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const loader = new THREE.TextureLoader();
 
 // Load First Scene
@@ -22,22 +27,22 @@ loadScene('assets/1.jpg');
 
 // Switching to next scene
 window.addEventListener('keydown', function(event) {
-    if (event.key === 'ArrowRight') { // Press the Right Arrow key
-        nextScene();
-    }
+  if (event.key === 'ArrowRight') { // Press the Right Arrow key
+    transitionToNextScene();
+  }
 });
 
 const renderer = new THREE.WebGLRenderer();
-renderer.setSize( window.innerWidth, window.innerHeight );
-renderer.setAnimationLoop( animate );
-document.body.appendChild( renderer.domElement );
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setAnimationLoop(animate);
+document.body.appendChild(renderer.domElement);
 
 camera.position.z = 5;
 
-const controls = new OrbitControls( camera, renderer.domElement );
+const controls = new OrbitControls(camera, renderer.domElement);
 
 function animate() {
-	renderer.render( scene, camera );
+  renderer.render(scene, camera);
 }
 
 
@@ -73,4 +78,37 @@ function loadScene(imagePath) {
 function nextScene() {
   currentSceneIndex = (currentSceneIndex + 1) % scenes.length;
   loadScene(scenes[currentSceneIndex]);
+}
+
+// Fade out the current scene and then fade in the new scene
+function transitionToNextScene() {
+  // Fade out the FOV (start transition)
+  createjs.Tween.get(camera)
+    .to({
+      fov: 70
+    }, 2000, createjs.Ease.quadInOut)
+    .call(function() {
+      camera.updateProjectionMatrix();
+
+      // Load the next scene after fade out completes
+      currentSceneIndex = (currentSceneIndex + 1) % scenes.length;
+      loadScene(scenes[currentSceneIndex]);
+
+      // Fade in the FOV after loading the new scene
+      createjs.Tween.get(camera)
+        .to({
+          fov: 75
+        }, 2000, createjs.Ease.quadInOut)
+        .call(function() {
+          camera.updateProjectionMatrix();
+        });
+    });
+
+  // Ensure that the camera updates during the tween
+  createjs.Ticker.on("tick", handleTick);
+
+  function handleTick(event) {
+    // Update the camera each tick
+    camera.updateProjectionMatrix();
+  }
 }
